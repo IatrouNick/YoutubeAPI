@@ -1,63 +1,41 @@
-import tkinter as tk
-import webbrowser
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-import random
-from config import API_KEY  # Import API key from config.py
+import sys
+from PyQt5.QtCore import QUrl
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QWidget
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 
 class YouTubeShortsApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("YouTube Shorts Viewer")
-        self.root.geometry("800x600")
+        self.root.setGeometry(100, 100, 800, 600)
+        
+        self.tab_widget = QTabWidget(self.root)
+        self.tab_widget.setGeometry(0, 0, 800, 600)
+        
+        # Load YouTube Shorts page
+        self.load_youtube_shorts()
 
-        self.shorts_urls = []
-        self.current_short_index = 0
+    def load_youtube_shorts(self):
+        browser = QWebEngineView()
+        url = QUrl("https://www.youtube.com/shorts/")
+        browser.load(url)
+        self.tab_widget.addTab(browser, "YouTube Shorts")
 
-        self.web_frame = tk.Frame(self.root)
-        self.web_frame.pack(fill=tk.BOTH, expand=True)
+def main():
+    app = QApplication(sys.argv)
+    root = QMainWindow()
+    root.setWindowTitle("YouTube Shorts Viewer")
 
-        self.open_short_button = tk.Button(self.web_frame, text="Open Short", command=self.open_current_short)
-        self.open_short_button.pack(pady=10)
+    # Create instance of YouTubeShortsApp
+    app_instance = YouTubeShortsApp(root)
 
-        self.scroll_next_button = tk.Button(self.web_frame, text="Next Short", command=self.scroll_to_next_short)
-        self.scroll_next_button.pack(pady=10)
+    # Set the central widget of the QMainWindow to the QTabWidget
+    root.setCentralWidget(app_instance.tab_widget)
 
-        # Fetch initial set of Shorts URLs
-        self.fetch_shorts_urls()
+    # Show the main window
+    root.show()
 
-    def fetch_shorts_urls(self):
-        try:
-            youtube = build('youtube', 'v3', developerKey=API_KEY)
-
-            # Example: Search for YouTube Shorts videos
-            request = youtube.search().list(
-                part='snippet',
-                q='#shorts',  # Search query for Shorts
-                type='video',
-                videoDuration='short',
-                maxResults=50  # Adjust as needed
-            )
-
-            response = request.execute()
-
-            # Extract video IDs from search results
-            self.shorts_urls = ['https://www.youtube.com/watch?v=' + item['id']['videoId'] for item in response['items']]
-
-        except HttpError as e:
-            print(f"An error occurred: {e}")
-
-    def open_current_short(self):
-        if self.shorts_urls:
-            url = self.shorts_urls[self.current_short_index]
-            webbrowser.open_new(url)
-
-    def scroll_to_next_short(self):
-        if self.shorts_urls:
-            self.current_short_index = (self.current_short_index + 1) % len(self.shorts_urls)
-            self.open_current_short()
+    # Start the application event loop
+    sys.exit(app.exec_())
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = YouTubeShortsApp(root)
-    root.mainloop()
+    main()
